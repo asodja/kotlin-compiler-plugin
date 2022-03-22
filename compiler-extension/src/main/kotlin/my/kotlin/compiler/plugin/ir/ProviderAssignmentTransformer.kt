@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.ir.types.isSubtypeOfClass
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 /**
  * Transforms assignment: a = "foo" to a.set("foo") where a is a Provider
@@ -34,19 +33,15 @@ class ProviderAssignmentTransformer(
     class ProviderElementTransformer(private val pluginContext: IrPluginContext) : IrElementTransformer<Unit> {
 
         override fun visitSetValue(expression: IrSetValue, data: Unit): IrExpression {
-            val ltype = expression.value.type
-            if (ltype.isProvider()) {
-                // TODO: This will throw exception if it's not a simple assignment
-                val rvalue = expression.value.safeAs<IrTypeOperatorCall>()!!.argument
+            if (expression.leftType().isProvider()) {
                 val irCall = IrCallImpl.fromSymbolOwner(
                     expression.startOffset,
                     expression.endOffset,
-                    // TODO Fix for generics
-                    pluginContext.findProviderSetFunction(ltype, rvalue.type)
+                    pluginContext.findProviderSetFunction(expression.leftType(), expression.rightType())
                 )
                 // Put right operand of an assignment as the first argument of set function,
                 // in other words: from a = <something> take `<something>` and set it as the first argument of set function.
-                irCall.putValueArgument(0, rvalue)
+                irCall.putValueArgument(0, expression.value)
                 // Set the left operand of an assignment as a dispatch receiver,
                 // in other words: from a = <something> take `a` and set it as dispatch receiver.
                 irCall.dispatchReceiver = IrGetValueImpl(
@@ -62,7 +57,16 @@ class ProviderAssignmentTransformer(
 
         private fun IrPluginContext.findProviderSetFunction(ltype: IrType, rtype: IrType): IrSimpleFunctionSymbol {
             return referenceFunctions(FqName("${ltype.classFqName.toString()}.set")).first {
-                it.owner.valueParameters.size == 1 && it.owner.valueParameters[0].type.isSubtypeOfClass(rtype.classOrNull!!)
+                it.owner.valueParameters.size == 1 && rtype.isSubtypeOfClass(it.owner.valueParameters[0].type.classOrNull!!)
+            }
+        }
+
+        private fun IrSetValue.leftType(): IrType = symbol.owner.type
+
+        private fun IrSetValue.rightType(): IrType {
+            return when (value) {
+                is IrTypeOperatorCall -> (value as IrTypeOperatorCall).argument.type
+                else -> value.type
             }
         }
 

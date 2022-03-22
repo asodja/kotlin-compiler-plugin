@@ -29,14 +29,15 @@ class CustomDiagnosticSuppressor : DiagnosticSuppressor {
         return when (diagnostic.factory) {
             Errors.TYPE_MISMATCH, Errors.VAL_REASSIGNMENT -> {
                 val parent = diagnostic.psiElement.parent
-                parent is KtBinaryExpression && isProvider(parent.left!!, bindingContext)
+                parent is KtBinaryExpression && isProvider(parent.left!!, parent.right!!, bindingContext)
             }
             else -> false
         }
     }
 
-    private fun isProvider(expr: KtExpression, bindingContext: BindingContext): Boolean {
-        return when (val kotlinType = expr.getType(bindingContext)) {
+    private fun isProvider(left: KtExpression, right: KtExpression, bindingContext: BindingContext): Boolean {
+        // TODO check if left and right operand match
+        return when (val kotlinType = left.getType(bindingContext)) {
             null -> false
             else -> {
                 val classDescriptor = DescriptorUtils.getClassDescriptorForType(kotlinType)

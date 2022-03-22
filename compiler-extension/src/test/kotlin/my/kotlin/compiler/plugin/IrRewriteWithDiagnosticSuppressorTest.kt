@@ -4,7 +4,8 @@ import com.tschuchort.compiletesting.KotlinCompilation.ExitCode.OK
 import com.tschuchort.compiletesting.SourceFile
 import my.kotlin.compiler.plugin.ir.CustomIrExtension
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class IrRewriteWithDiagnosticSuppressorTest : BaseCompilerExtensionTest() {
     override fun getKotlinPluginComponentRegistrar(): GradleKotlinPluginComponentRegistrar {
@@ -14,8 +15,9 @@ class IrRewriteWithDiagnosticSuppressorTest : BaseCompilerExtensionTest() {
         )
     }
 
-    @Test
-    fun `compile succeeds and method call returns correct result`() {
+    @ParameterizedTest
+    @ValueSource(strings = [""" "42" """, """ StringProvider("42") """])
+    fun `compile succeeds and method call returns correct result`(assignmentParameter: String) {
         val result = compile(
             sourceFile = SourceFile.kotlin(
                 "main.kt", """
@@ -36,7 +38,7 @@ class StringProvider(private var value: String = "") : Provider<String> {
 class Test {
   fun getProviderValue(): String {
     val a = StringProvider("")
-    a = "42"
+    a = $assignmentParameter
     return a.get()
   }
 }
