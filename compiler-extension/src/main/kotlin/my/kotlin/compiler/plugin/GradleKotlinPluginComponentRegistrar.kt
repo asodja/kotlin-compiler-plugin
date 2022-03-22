@@ -1,9 +1,7 @@
 package my.kotlin.compiler.plugin
 
-import my.kotlin.compiler.plugin.ir.CustomIrExtension
+import my.kotlin.compiler.plugin.diagnostics.CustomDiagnosticSuppressor
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
-import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.com.intellij.mock.MockProject
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -12,12 +10,16 @@ import org.jetbrains.kotlin.fir.analysis.extensions.FirAdditionalCheckersExtensi
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 
 class GradleKotlinPluginComponentRegistrar(
-    val firAdditionalCheckers: List<(session: FirSession) -> FirAdditionalCheckersExtension> = listOf()
+    val firAdditionalCheckers: List<(session: FirSession) -> FirAdditionalCheckersExtension> = listOf(),
+    val irExtensions: List<IrGenerationExtension> = listOf(),
+    val suppressDiagnostics: Boolean = false
 ) : ComponentRegistrar {
     override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) {
-        val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
         FirExtensionRegistrar.registerExtension(project, CustomFirExtensionRegistrar(firAdditionalCheckers))
-        IrGenerationExtension.registerExtension(project, CustomIrExtension(messageCollector))
+        irExtensions.forEach { IrGenerationExtension.registerExtension(project, it) }
+        if (suppressDiagnostics) {
+            CustomDiagnosticSuppressor.registerExtension(project)
+        }
     }
 
     class CustomFirExtensionRegistrar(

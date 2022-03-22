@@ -5,6 +5,7 @@ import com.tschuchort.compiletesting.SourceFile
 
 abstract class BaseCompilerExtensionTest {
 
+    open val useFir: Boolean = false
     abstract fun getKotlinPluginComponentRegistrar(): GradleKotlinPluginComponentRegistrar
 
     fun compile(sourceFiles: List<SourceFile>): KotlinCompilation.Result {
@@ -13,7 +14,7 @@ abstract class BaseCompilerExtensionTest {
             useIR = true
             compilerPlugins = listOf(getKotlinPluginComponentRegistrar())
             inheritClassPath = true
-            useFIR = true
+            useFIR = useFir
         }.compile()
     }
 
