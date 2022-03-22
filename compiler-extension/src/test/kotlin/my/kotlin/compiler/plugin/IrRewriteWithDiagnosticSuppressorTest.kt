@@ -19,18 +19,23 @@ class IrRewriteWithDiagnosticSuppressorTest : BaseCompilerExtensionTest() {
         val result = compile(
             sourceFile = SourceFile.kotlin(
                 "main.kt", """
-class Provider(private var name: String) {
-   fun set(value: String) {
-        this.name = value
-   }
-
-    fun get(): String {
-        return this.name
+interface Provider<T> {
+    fun set(v: T)
+    fun set(v: Provider<T>)
+    fun get(): T
+}
+class StringProvider(private var value: String = "") : Provider<String> {
+    override fun set(v: String) {
+        this.value = v
     }
+    override fun set(v: Provider<String>) {
+        this.value = v.get()
+    }
+    override fun get(): String = this.value
 }
 class Test {
   fun getProviderValue(): String {
-    val a = Provider("")
+    val a = StringProvider("")
     a = "42"
     return a.get()
   }

@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.calls.util.getType
+import org.jetbrains.kotlin.resolve.descriptorUtil.getSuperInterfaces
 import org.jetbrains.kotlin.resolve.diagnostics.DiagnosticSuppressor
 
 class CustomDiagnosticSuppressor : DiagnosticSuppressor {
@@ -40,6 +41,8 @@ class CustomDiagnosticSuppressor : DiagnosticSuppressor {
             else -> {
                 val classDescriptor = DescriptorUtils.getClassDescriptorForType(kotlinType)
                 return DescriptorUtils.getFqNameSafe(classDescriptor).toString() == "Provider"
+                        || classDescriptor.getSuperInterfaces()
+                    .any { DescriptorUtils.getFqNameSafe(it).toString() == "Provider" }
             }
         }
     }
