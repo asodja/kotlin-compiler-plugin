@@ -13,11 +13,9 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classOrNull
 import org.jetbrains.kotlin.ir.types.isSubtypeOfClass
-import org.jetbrains.kotlin.ir.util.statements
 import org.jetbrains.kotlin.ir.util.superTypes
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
 import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
 
 /**
  * Transforms assignment: task.a = "foo" to task.a.set("foo") where a is a Provider
@@ -38,7 +36,7 @@ class ProviderAssignmentTransformer(
                 val getCall = IrCallImpl.fromSymbolOwner(
                     expression.startOffset,
                     expression.endOffset,
-                    pluginContext.findPropertyGetFunction(expression.receiver!!.type, expression.symbol.owner.name)
+                    expression.getPropertyGetter()
                 )
                 getCall.dispatchReceiver = expression.receiver
                 val setCall = IrCallImpl.fromSymbolOwner(
@@ -55,10 +53,8 @@ class ProviderAssignmentTransformer(
             return expression
         }
 
-        private fun IrPluginContext.findPropertyGetFunction(ltype: IrType, property: Name): IrSimpleFunctionSymbol {
-            // TODO: find default property getter, also check that it actually is a getter
-            val methodName = "${ltype.classFqName.toString()}.get${property.asString().capitalize()}2"
-            return referenceFunctions(FqName(methodName)).first { it.owner.valueParameters.isEmpty() }
+        private fun IrSetField.getPropertyGetter(): IrSimpleFunctionSymbol {
+            return symbol.owner.correspondingPropertySymbol?.owner?.getter?.symbol!!
         }
 
         private fun IrPluginContext.findProviderSetFunction(ltype: IrType, rtype: IrType): IrSimpleFunctionSymbol {

@@ -33,11 +33,7 @@ class IrRewriteWithDiagnosticSuppressorTest : BaseCompilerExtensionTest() {
             }
             override fun get(): String = this.value
         }
-        class Task(val provider: StringProvider = StringProvider("")) {
-            fun getProvider2(): StringProvider {
-                return provider
-            }
-        }
+        class Task(val provider: StringProvider = StringProvider(""))
     """.trimIndent()))
 
     @ParameterizedTest
