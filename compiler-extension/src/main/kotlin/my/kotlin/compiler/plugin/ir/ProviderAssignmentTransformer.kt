@@ -27,11 +27,6 @@ class ProviderAssignmentTransformer(
 ) : IrElementTransformerVoidWithContext() {
 
     override fun visitFunctionNew(declaration: IrFunction): IrStatement {
-        declaration.body?.statements?.forEach {
-            if (declaration.name.asString() == "getProviderValue") {
-                println(it)
-            }
-        }
         declaration.body?.transformChildren(ProviderElementTransformer(pluginContext), Unit)
         return declaration
     }
