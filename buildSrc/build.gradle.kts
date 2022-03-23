@@ -1,3 +1,5 @@
+import java.time.Duration
+
 plugins {
     `kotlin-dsl`
 }
