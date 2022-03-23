@@ -8,9 +8,9 @@ abstract class BaseCompilerExtensionTest {
     open val useFir: Boolean = false
     abstract fun getKotlinPluginComponentRegistrar(): GradleKotlinPluginComponentRegistrar
 
-    fun compile(sourceFiles: List<SourceFile>): KotlinCompilation.Result {
+    fun compile(providerDefinitions: List<SourceFile>, testFiles: List<SourceFile>): KotlinCompilation.Result {
         return KotlinCompilation().apply {
-            sources = sourceFiles
+            sources = providerDefinitions + testFiles
             useIR = true
             compilerPlugins = listOf(getKotlinPluginComponentRegistrar())
             inheritClassPath = true
@@ -18,7 +18,11 @@ abstract class BaseCompilerExtensionTest {
         }.compile()
     }
 
-    fun compile(sourceFile: SourceFile): KotlinCompilation.Result {
-        return compile(listOf(sourceFile))
+    fun compile(providerDefinitions: List<SourceFile>, testFile: SourceFile): KotlinCompilation.Result {
+        return compile(providerDefinitions, listOf(testFile))
+    }
+
+    fun compile(testFile: SourceFile): KotlinCompilation.Result {
+        return compile(listOf(), listOf(testFile))
     }
 }

@@ -18,31 +18,35 @@ class IrRewriteWithDiagnosticSuppressorTest : BaseCompilerExtensionTest() {
         )
     }
 
+    private val providerDefinitions = listOf(SourceFile.kotlin("providers.kt", """
+        interface Provider<T> {
+            fun set(v: T)
+            fun set(v: Provider<T>)
+            fun get(): T
+        }
+        class StringProvider(private var value: String = "") : Provider<String> {
+            override fun set(v: String) {
+                this.value = v
+            }
+            override fun set(v: Provider<String>) {
+                this.value = v.get()
+            }
+            override fun get(): String = this.value
+        }
+        class Task(val provider: StringProvider = StringProvider("")) {
+            fun getProvider2(): StringProvider {
+                return provider
+            }
+        }
+    """.trimIndent()))
+
     @ParameterizedTest
     @ValueSource(strings = [""" "42" """, """ StringProvider("42") """])
     fun `compile succeeds and method call returns correct result with assignment`(assignmentValue: String) {
         val result = compile(
-            sourceFile = SourceFile.kotlin(
+            providerDefinitions = providerDefinitions,
+            testFile = SourceFile.kotlin(
                 "main.kt", """
-interface Provider<T> {
-    fun set(v: T)
-    fun set(v: Provider<T>)
-    fun get(): T
-}
-class StringProvider(private var value: String = "") : Provider<String> {
-    override fun set(v: String) {
-        this.value = v
-    }
-    override fun set(v: Provider<String>) {
-        this.value = v.get()
-    }
-    override fun get(): String = this.value
-}
-class Task(val provider: StringProvider = StringProvider("")) {
-    fun getProvider2(): StringProvider {
-        return provider
-    }
-}
 class Test {
   fun getProviderValue(): String {
     val task = Task()
@@ -63,33 +67,15 @@ class Test {
     @ValueSource(strings = [""" "42" """, """ StringProvider("42") """])
     fun `compile succeeds and method call returns correct result with apply {}`(assignmentValue: String) {
         val result = compile(
-            sourceFile = SourceFile.kotlin(
+            providerDefinitions = providerDefinitions,
+            testFile = SourceFile.kotlin(
                 "main.kt", """
-interface Provider<T> {
-    fun set(v: T)
-    fun set(v: Provider<T>)
-    fun get(): T
-}
-class StringProvider(private var value: String = "") : Provider<String> {
-    override fun set(v: String) {
-        this.value = v
-    }
-    override fun set(v: Provider<String>) {
-        this.value = v.get()
-    }
-    override fun get(): String = this.value
-}
-class Task(val provider: StringProvider = StringProvider("")) {
-    fun getProvider2(): StringProvider {
-        return provider
-    }
-}
 class Test {
   fun getProviderValue(): String {
     val task = Task()
     task.apply {
         provider = $assignmentValue
-    }
+    } 
     return task.provider.get()
   }
 }
@@ -105,27 +91,9 @@ class Test {
     @Test
     fun `fails nicely for local val assignment`() {
         val result = compile(
-            sourceFile = SourceFile.kotlin(
+            providerDefinitions = providerDefinitions,
+            testFile = SourceFile.kotlin(
                 "main.kt", """
-interface Provider<T> {
-    fun set(v: T)
-    fun set(v: Provider<T>)
-    fun get(): T
-}
-class StringProvider(private var value: String = "") : Provider<String> {
-    override fun set(v: String) {
-        this.value = v
-    }
-    override fun set(v: Provider<String>) {
-        this.value = v.get()
-    }
-    override fun get(): String = this.value
-}
-class Task(val provider: StringProvider = StringProvider("")) {
-    fun getProvider2(): StringProvider {
-        return provider
-    }
-}
 class Test {
   fun getProviderValue(): String {
     val provider = StringProvider("")
@@ -137,6 +105,6 @@ class Test {
             )
         )
         assertEquals(COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("main.kt: (23, 5): Val cannot be reassigned"))
+        assertTrue(result.messages.contains("main.kt: (4, 5): Val cannot be reassigned"))
     }
 }

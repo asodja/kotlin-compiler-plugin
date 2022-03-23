@@ -22,7 +22,7 @@ class FirRewriteWithSuppressOnCheckExtensionTest : BaseCompilerExtensionTest() {
     @Test
     fun `compile succeeds`() {
         val result = compile(
-            sourceFile = SourceFile.kotlin(
+            testFile = SourceFile.kotlin(
                 "main.kt", """
 class Provider(private var name: String) {
    fun set(value: String) {

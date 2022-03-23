@@ -17,7 +17,7 @@ class FirRewriteOnCheckExtensionTest : BaseCompilerExtensionTest() {
     @Test
     fun `compile succeeds and method call returns correct type`() {
         val result = compile(
-            sourceFile = kotlin(
+            testFile = kotlin(
                 "main.kt", """
 class Provider(private var name: String) {
    fun set(value: String) {
