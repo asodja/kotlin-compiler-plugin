@@ -4,7 +4,8 @@ import com.tschuchort.compiletesting.KotlinCompilation.ExitCode.OK
 import com.tschuchort.compiletesting.SourceFile
 import my.kotlin.compiler.plugin.ir.CustomIrExtension
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class IrRewriteWithDiagnosticSuppressorTest : BaseCompilerExtensionTest() {
     override fun getKotlinPluginComponentRegistrar(): GradleKotlinPluginComponentRegistrar {
@@ -14,8 +15,9 @@ class IrRewriteWithDiagnosticSuppressorTest : BaseCompilerExtensionTest() {
         )
     }
 
-    @Test
-    fun `compile succeeds and method call returns correct result with constant`() {
+    @ParameterizedTest
+    @ValueSource(strings = [""" "42" """, """ StringProvider("42") """])
+    fun `compile succeeds and method call returns correct result with assignment`(assignmentValue: String) {
         val result = compile(
             sourceFile = SourceFile.kotlin(
                 "main.kt", """
@@ -41,7 +43,7 @@ class Task(val provider: StringProvider = StringProvider("")) {
 class Test {
   fun getProviderValue(): String {
     val task = Task()
-    task.provider = "42"
+    task.provider = $assignmentValue
     return task.provider.get()
   }
 }
@@ -54,8 +56,9 @@ class Test {
         assertEquals(kClazz.getMethod("getProviderValue").invoke(obj), "42")
     }
 
-    @Test
-    fun `compile succeeds and method call returns correct result with a provider`() {
+    @ParameterizedTest
+    @ValueSource(strings = [""" "42" """, """ StringProvider("42") """])
+    fun `compile succeeds and method call returns correct result with apply {}`(assignmentValue: String) {
         val result = compile(
             sourceFile = SourceFile.kotlin(
                 "main.kt", """
@@ -81,7 +84,9 @@ class Task(val provider: StringProvider = StringProvider("")) {
 class Test {
   fun getProviderValue(): String {
     val task = Task()
-    task.provider = StringProvider("42")
+    task.apply {
+        provider = $assignmentValue
+    }
     return task.provider.get()
   }
 }
